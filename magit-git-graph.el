@@ -222,7 +222,7 @@ is (REFS AUTHOR DATE SUBJECT), and MARGIN says if Magit's margin is on."
                    (if (derived-mode-p 'magit-git-graph-mode) "refresh" "show")))])
 
 ;; Open the menu from Magit's log menu with "l g".
-(transient-append-suffix 'magit-log "a"
+(transient-append-suffix 'magit-log "s"
   '("g" "git-graph" magit-git-graph))
 
 (provide 'magit-git-graph)
