@@ -31,10 +31,6 @@
   "Arguments for `magit-git-graph'."
   :type '(repeat string))
 
-(defcustom magit-git-graph-author-width 18
-  "Width of the author name when it is shown inline instead of in the margin."
-  :type 'integer)
-
 (defvar-keymap magit-git-graph-mode-map
   :doc "Keymap for `magit-git-graph-mode'."
   :parent magit-log-mode-map
@@ -51,6 +47,14 @@ the commit at point work just like they would in `magit-log-mode'.
   :group 'magit-git-graph)
 
 ;;; Buffer
+
+(defun magit-git-graph--margin-option (fn &rest args)
+  "Give `magit-git-graph-mode' buffers the same margin as `magit-log-mode'."
+  (if (eq major-mode 'magit-git-graph-mode)
+      'magit-log-margin
+    (apply fn args)))
+
+(advice-add 'magit--right-margin-option :around #'magit-git-graph--margin-option)
 
 (defun magit-git-graph--arguments ()
   "Translate `magit-buffer-log-args' into git-graph arguments, and drop the rest."
@@ -118,19 +122,6 @@ Use the same placeholders as `magit-log-heading-format'."
       (setq hashes (nthcdr 500 hashes)))
     table))
 
-(defun magit-git-graph--insert-author-date (author date)
-  "Insert AUTHOR and the age of DATE right-aligned."
-  (pcase-let ((`(,count ,unit) (magit--age date nil)))
-    (insert ?\s
-            (propertize " " 'display
-                        `(space :align-to
-                                (- right ,(+ magit-git-graph-author-width 12))))
-            (propertize (truncate-string-to-width
-                         (or author "") magit-git-graph-author-width nil ?\s "…")
-                        'font-lock-face 'magit-log-author)
-            (propertize (format " %2d %-7s" count unit)
-                        'font-lock-face 'magit-log-date))))
-
 (defun magit-git-graph--insert-commit (rev graph more info margin)
   "Insert a commit section for REV.
 GRAPH is its graph prefix, MORE are the graph-only lines below it, INFO
@@ -146,8 +137,6 @@ is (REFS AUTHOR DATE SUBJECT), and MARGIN says if Magit's margin is on."
       (insert (magit-log--wash-summary (or subject "")))
       (when (and refs magit-log-show-refname-after-summary)
         (insert ?\s refs))
-      (when (and date (not margin))
-        (magit-git-graph--insert-author-date author date))
       (insert ?\n)
       ;; Margin calls in the same order as `magit-log-wash-rev'
       (when margin
